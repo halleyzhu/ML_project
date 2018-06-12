@@ -80,7 +80,7 @@ confusionMatrix(RFPredict, TestT$classe)
 ```
 Random Forest model has an accuracy of 0.9966, with 95% CI of (0.9948, 0.9979). In another words, the out of sample error is 0.0034.
 
-## Model Selection and Prediction
+## 4. Model Selection and Prediction
 Random Forest performs better than Decision Trees as indicated by the Accuracy of 0.9954 vs 0.7212. Therefore the Test data set is set to run on Random Forest to get the results. 
 
 ```{r echo=TRUE}
