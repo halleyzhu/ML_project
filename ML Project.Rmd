@@ -47,8 +47,11 @@ TrainTC[TrainTC==""] <- NA
 TrainTC <- TrainTC[!(apply(TrainTC, 2, function(x) sum(is.na(x)))/nrow(TrainTC)>0.80)]
 dim(TrainTC)
 ```
+### Model Building
+Two models - Decision Tree and Random Forest - are constructed to predict classe. The model with better accuracy will be selected to produce the outcome variable on the test data.
 
 ### Model 1: Decision Tree
+
 Decision Tree is performed to predict classes using the 52 variables in the TrainTC data set.
 ```{r echo=TRUE, message=FALSE, warning=FALSE}
 # Decision Tree modeling
