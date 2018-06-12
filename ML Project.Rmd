@@ -1,0 +1,87 @@
+---
+title: "Machine Learning Course Project"
+---
+## Executive Summary
+The project uses data collected from accelerometers on the belt, forearm, arm, and dumbell of 6 participantsthe to predict the manner in which they did the exercise. The analysis below builds two models - Decision Tree and Random Forest. To perform corss-validation, under both models the data is split into 70% of testing and 30% of training data sets using the pml-training file. It turned out the expected out of sample error of the Decision Tree model is higher than the Random Forest(0.3121 vs 0.0034).Therefore Decision Tree is a better model to predict the 20 different test cases. 
+
+## Analysis Methodology
+### 1. Loading data
+The data for this project comes from http://groupware.les.inf.puc-rio.br/har. The training data is downloaded from https://d396qusza40orc.cloudfront.net/predmachlearn/pml-training.csv, and the test data is downloaded from https://d396qusza40orc.cloudfront.net/predmachlearn/pml-testing.csv
+
+```{r echo=TRUE, results="hide"}
+# Loading data
+train <- read.csv("D:/CAREER/DS Course/ML/pml-training.csv", na.strings=c("NA","#DIV/0!", ""))
+test <- read.csv("D:/CAREER/DS Course/ML/pml-testing.csv", na.strings=c("NA","#DIV/0!", ""))
+# view data structure
+str(train)
+unique(train$classe)
+```
+
+The outcome variable "classe"" has five values: 1. Class A - exactly according to the specification; 2. Class B - throwing the elbows to the front; 3. Class C - lifting the dumbbell only halfway; 4. Class D - lowering the dumbbell only halfway; 5. Class E - throwing the hips to the front. There are too many variables in the data set and not every variable is related to the outcome, so data needs to be cleaned before building the model. 
+
+### 2. Cross-validation
+To perform cross-validation, the traninig data set is split into two subsets: TrainT, which is 70% of the original Training data set,is used for model fitting; the rest of the 30% is for model testing. After we choose the better model, the original Testing data set will be used for forcasting.
+```{r echo=TRUE, results="hide", message=FALSE, warning=FALSE}
+# load libraries
+library(caret)
+library(lattice)
+library(ggplot2)
+library(randomForest)
+library(rpart)
+library(rpart.plot)
+library(RColorBrewer)
+library(rattle)
+
+# split data 
+set.seed(1234)
+TrainTrain <- createDataPartition(y=train$classe,p=.70,list=F)
+TrainT <- train[TrainTrain,]
+TestT <- train[-TrainTrain,]
+```
+AS not every variable in the Tranining data is suitable for prediction,non-predictors such as identifier, timestamp, and window data are exlcuded. Also, variables with too many NA values are revmoved. After clearning up, 52 variables could be used for prediction. 
+```{r echo=TRUE, results="hide"}
+#exclude  (they cannot be used for prediction)
+TrainTC <- TrainT[,-grep("name|timestamp|window|X", colnames(TrainT), value=F)]
+#take out variables with over 80% of  missing data 
+TrainTC[TrainTC==""] <- NA
+TrainTC <- TrainTC[!(apply(TrainTC, 2, function(x) sum(is.na(x)))/nrow(TrainTC)>0.80)]
+dim(TrainTC)
+```
+
+### Model 1: Decision Tree
+Decision Tree is performed to predict classes using the 52 variables in the TrainTC data set.
+```{r echo=TRUE, message=FALSE, warning=FALSE}
+# Decision Tree modeling
+DT <- rpart(classe ~ ., data=TrainTC, method="class")
+# Decision Tree plot
+fancyRpartPlot(DT)
+```
+
+Predicting on the test data and generate model parameters
+```{r echo=TRUE}
+# predicting
+DTpredict <- predict(DT, TestT, type = "class")
+# display results of the prediction
+confusionMatrix(DTpredict, TestT$classe)
+```
+
+Decision Tree model has an accuracy of 0.6879, with 95% CI of (0.6758, 0.6997), which translates to an out of sample error of 0.3121.
+
+### Model 2: Random Forest
+
+```{r echo=TRUE}
+RF <- randomForest(classe ~. , data=TrainTC)
+RFPredict <- predict(RF, TestT, type = "class")
+confusionMatrix(RFPredict, TestT$classe)
+
+```
+Random Forest model has an accuracy of 0.9966, with 95% CI of (0.9948, 0.9979). In another words, the out of sample error is 0.0034.
+
+## Model Selection and Prediction
+Random Forest performs better than Decision Trees as indicated by the Accuracy of 0.9954 vs 0.7212. Therefore the Test data set is set to run on Random Forest to get the results. 
+
+```{r echo=TRUE}
+predictFinal <- predict(RF, test, type = "class")
+predictFinal
+
+```
